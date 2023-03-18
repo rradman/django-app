@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h2>Welcome</h2>
+    <div>
+        username <input type="text" id="i1" name="username">
+    </div>
+    <div>
+        password <input type="password" id="i2" name="password">
+    </div>
+    <div>
+        email <input type="text" id="i3" name="email">
+    </div>
+    <div>
+        phone <input type="text" id="i4" name="phone">
+    </div>
+    <div>
+        <br>
+        <button onclick="save()">Save Data</button>
+    </div>
+
+    <p id="show_data"></p>
+
+</body>
+
+</html>
+
+<script>
+    // Parse cookies, find token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    let user_data
+    const csrftoken = getCookie('csrftoken');
+
+    // Save the form data in DB
+    const save = () => {
+        user_data = {
+            username: document.getElementById("i1").value,
+            password: document.getElementById("i2").value,
+            email: document.getElementById("i3").value,
+            phone: document.getElementById("i4").value
+        }
+
+
+        for (const [key, value] of Object.entries(user_data)) {
+            if (value == '') {
+                alert(`Please enter all data! Missing ${key}`);
+                return
+            }
+        }
+
+        url = 'http://127.0.0.1:8000/save_user/'
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify(user_data)
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.message == "success") {
+                    document.getElementById("show_data").innerHTML = "Data saved successfully displaying in 60 seconds"
+                    setTimeout(show_data, 3 * 1000);
+                }
+                else {
+                    document.getElementById("show_data").innerHTML = res.message
+                }
+            });
+    }
+
+    // Fetch data from DB and display it after n seconds
+    const show_data = () => {
+        document.getElementById("show_data").innerHTML = "LE DATA"
+
+        let url = 'http://127.0.0.1:8000/get_user/' + user_data.username
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.response.message = "success") {
+                    document.getElementById("show_data").innerHTML = res.response.user
+                }
+                else {
+                    document.getElementById("show_data").innerHTML = "Failed to fetch data"
+                }
+            });
+    }
+
+</script>
